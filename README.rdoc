@@ -1,4 +1,4 @@
-# Koan Ruby
+=  Koan Ruby
 My solutions to Koan Ruby
 
 = Other stuff
