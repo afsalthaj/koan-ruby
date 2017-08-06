@@ -6,11 +6,6 @@ My solutions to Koan Ruby
 Please note the repo is intended to provide only solutions. The actual test and code is taken from 
 http://www.rubykoans.com
 
-Author         :: Jim Weirich <jim@neo.org>
-Author         :: Joe O'Brien <joe@objo.com>
-Issue Tracker  :: http://www.pivotaltracker.com/projects/48111
-Requires       :: Ruby 1.8.x or later and Rake (any recent version)
-
 = License
 
 http://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png
