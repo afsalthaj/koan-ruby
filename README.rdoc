@@ -1,10 +1,7 @@
 =  Koan Ruby
 My solutions to Koan Ruby
 
-= Other stuff
-
-Please note the repo is intended to provide only solutions. The questions are taken from
-http://www.rubykoans.com
+The questions are taken from http://www.rubykoans.com
 
 = License
 
