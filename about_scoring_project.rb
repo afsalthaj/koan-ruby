@@ -29,8 +29,37 @@ require File.expand_path(File.dirname(__FILE__) + '/neo')
 #
 # Your goal is to write the score method.
 
-def score(dice)
-  # You need to write this method
+
+
+def score(array)
+  result = 0
+  hash_group = array.group_by{|x| x}
+  residual = lambda {|x|
+    if x == 1
+      100
+    elsif x == 5
+      50
+    else 0
+    end
+  }
+
+  (1..6).each{|y|
+    xs_group = hash_group[y]
+    if xs_group != nil
+      difference = xs_group.size - 3
+        if difference >= 0
+          if y == 1
+            result += 1000
+          else
+            result += y * 100
+          end
+          result += residual[y] * difference
+        else
+          result += residual[y] * xs_group.size
+        end
+    end
+  }
+  result
 end
 
 class AboutScoringProject < Neo::Koan
