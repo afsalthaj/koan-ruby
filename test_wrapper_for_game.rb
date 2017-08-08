@@ -143,7 +143,6 @@ class TestWrapperForGame < Neo::Koan
     assert_equal [:X, :O], new_game.players
     assert_equal :X, new_game.turn
     assert_equal [1, 2, 3, 4, 5, 6, 7, 8, 9], new_game.board
-
   end
 
   def test_possible_choices_gives_the_right_result
