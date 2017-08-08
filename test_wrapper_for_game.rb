@@ -52,7 +52,7 @@ class TestWrapperForGame < Neo::Koan
       @players = [:X, :O]
       @board = (1..9).to_a
       @running = true
-      @turn = turn
+      @turn = turn.clone
       @mini_max_scores = []
     end
 
@@ -118,6 +118,44 @@ class TestWrapperForGame < Neo::Koan
     def possible_choices(b)
       result = b.select {|x| x.is_a?(Integer)}
       result
+    end
+
+    def min_max_algo(game, main_game)
+      if game.game_over?
+        main_game.mini_max_scores << game.score
+        return main_game.mini_max_scores
+      end
+      i = 0
+      possible_choices = possible_choices(game.board)
+      puts("the possible choices inside the loops is #{possible_choices}")
+      while i < possible_choices.size
+        another_game = Game.new(game.turn)
+        another_game.set_board(game.board)
+        another_game.display_board
+        the_choice = possible_choices[i]
+        another_game.set_a_new_board(the_choice, another_game.turn)
+        another_game.display_board
+        min_max_algo(another_game, main_game)
+        i += 1
+      end
+      return main_game.mini_max_scores
+    end
+
+    def initiate_min_max
+      i = 0
+      min_max_scores = {}
+      possible_choices = possible_choices(board)
+      while i < possible_choices.size
+        the_choice = possible_choices[i]
+        another_game = Game.new(turn)
+        another_game.set_board(board)
+        another_game.set_a_new_board(the_choice, another_game.turn)
+        result = min_max_algo(another_game, another_game)
+        puts ("the possible choice is #{the_choice} and the score of that possible choice is #{result}")
+        min_max_scores.merge({the_choice => result})
+        i += 1
+      end
+      return min_max_scores
     end
 
     # Call minimax instead of game.set_a_new_board if the next turn is :X
@@ -214,12 +252,7 @@ class TestWrapperForGame < Neo::Koan
     game = Game.new(:X)
     game.set_board([:O, 2, :X, :X, 5, 6, :X, :O, :O])
     # if the output of mini_max recursive function is equal to the mini_max_scores in game
-    print("the is amazing\n")
-    # print("this is amazing #{game.mini_max(game)}" )
     game.mini_max(game, game)
-    print ("OK! MinMax is over, see what is the min_max_scores now\n")
-    print game.mini_max_scores
-
     #OK! Has the games initial board changed?, No it hasn't
     assert_equal [:O, 2, :X, :X, 5, 6, :X, :O, :O], game.board
     assert_equal [-10, 10, 10, 10, -10], game.mini_max_scores
@@ -233,8 +266,6 @@ class TestWrapperForGame < Neo::Koan
     new_game = Game.new(new_turn)
     new_game.set_board(new_board)
     new_game.set_a_new_board(5, new_game.turn)
-    new_game.display_board
-    game.display_board
     assert(new_game.board != game.board)
   end
 
@@ -243,5 +274,13 @@ class TestWrapperForGame < Neo::Koan
     game.push_score_min_max_score(+10)
     game.push_score_min_max_score(-10)
     assert_equal([10, -10], game.mini_max_scores)
+  end
+
+  def test_initiate_min_max
+    game = Game.new(:X)
+    game.set_board([:O, 2, :X, :X, 5, 6, :X, :O, :O])
+    game.set_a_new_board(6, :X)
+    game.display_board
+    print(game.min_max_algo(game, game))
   end
 end
