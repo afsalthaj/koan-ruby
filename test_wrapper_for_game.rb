@@ -18,7 +18,7 @@ class TestWrapperForGame < Neo::Koan
     end
 
     def set_board(board)
-      @board = board
+      @board = board.clone
     end
 
     def set_a_new_board(index, new_turn)
@@ -30,10 +30,11 @@ class TestWrapperForGame < Neo::Koan
       # set_a_new_board is called. set_a_new_board is called or allowed to called only when the game is not
       # over or not
       if players.include?(turn) && new_turn == turn
-        board = @board
-        index_choices = possible_choices(board)
+        b = board
+        index_choices = possible_choices(b)
         if index_choices.include? index
-          @board[index - 1] = new_turn
+          b[index - 1] = new_turn
+          set_board(b)
         else
           raise ChoiceError, "Your choice #{index} has gone wrong. Sorry that this simple game allowed you to do it !!"
         end
@@ -71,7 +72,7 @@ class TestWrapperForGame < Neo::Koan
           return true
         end
       }
-      # not sure if there is any other easy way
+      # not sure if there is any other easy way, to get around the truthy nature of Ruby conditional statements
       if result == true
         true
       else
@@ -121,7 +122,9 @@ class TestWrapperForGame < Neo::Koan
 
     # Call minimax instead of game.set_a_new_board if the next turn is :X
     # You may need to pass the existing game, as it is recursive in nature.
-    def mini_max(game)
+    # the function arguments takes two games to make things safe.
+    # the future game and main_game, where main_game never change
+    def mini_max(game, main_game)
       i = 0
       # When you calculate minimax, you need to ensure that the existing player
       # is :X, that is turn == :X
@@ -141,12 +144,10 @@ class TestWrapperForGame < Neo::Koan
         another_game.set_board(game.board)
         the_choice = possible_choices[i]
         another_game.set_a_new_board(the_choice, another_game.turn)
-        puts("the current value of i is #{i}")
-        another_game.display_board
         if another_game.game_over?
-          push_score_min_max_score another_game.score
+          main_game.push_score_min_max_score(another_game.score)
         else
-          mini_max(another_game)
+          another_game.mini_max(another_game, main_game)
         end
         i += 1
       end
@@ -214,8 +215,33 @@ class TestWrapperForGame < Neo::Koan
     game.set_board([:O, 2, :X, :X, 5, 6, :X, :O, :O])
     # if the output of mini_max recursive function is equal to the mini_max_scores in game
     print("the is amazing\n")
-   # print("this is amazing #{game.mini_max(game)}" )
-    # game.mini_max(game)
-    #assert_equal [10, 10, 10], game.mini_max_scores
+    # print("this is amazing #{game.mini_max(game)}" )
+    game.mini_max(game, game)
+    print ("OK! MinMax is over, see what is the min_max_scores now\n")
+    print game.mini_max_scores
+
+    #OK! Has the games initial board changed?, No it hasn't
+    assert_equal [:O, 2, :X, :X, 5, 6, :X, :O, :O], game.board
+    assert_equal [-10, 10, 10, 10, -10], game.mini_max_scores
+  end
+
+  def test_if_previous_game_would_ever_get_mutated_when_board_is_changed
+    game = Game.new(:X)
+    game.set_board([:O, :X, :X, :X, 5, 6, :X, :O, :O])
+    new_turn = game.turn
+    new_board = game.board
+    new_game = Game.new(new_turn)
+    new_game.set_board(new_board)
+    new_game.set_a_new_board(5, new_game.turn)
+    new_game.display_board
+    game.display_board
+    assert(new_game.board != game.board)
+  end
+
+  def test_append_scores
+    game = Game.new(:X)
+    game.push_score_min_max_score(+10)
+    game.push_score_min_max_score(-10)
+    assert_equal([10, -10], game.mini_max_scores)
   end
 end
