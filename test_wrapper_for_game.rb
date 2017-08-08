@@ -186,6 +186,6 @@ class TestWrapperForGame < Neo::Koan
     assert_equal true, new_game.game_over?
     assert_equal true, new_game.game_won?(:X)
     new_game.set_board([:O, :X, :X, :X, :O, :X, :X, :X, :O])
-    assert_equal true, new_game.game_won?(:X)
+    assert_equal true, new_game.game_won?(:O)
   end
 end
