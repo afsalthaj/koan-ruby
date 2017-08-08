@@ -11,6 +11,11 @@ class TestWrapperForGame < Neo::Koan
     attr_reader :turn
     attr_reader :board
     attr_reader :players
+    attr_reader :mini_max_scores
+
+    def push_score_min_max_score(score)
+      @mini_max_scores << score
+    end
 
     def set_board(board)
       @board = board
@@ -47,6 +52,7 @@ class TestWrapperForGame < Neo::Koan
       @board = (1..9).to_a
       @running = true
       @turn = turn
+      @mini_max_scores = []
     end
 
     def display_board
@@ -59,13 +65,18 @@ class TestWrapperForGame < Neo::Koan
     end
 
     def game_won?(player)
-      display_board
       winning_sequences = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]]
-      winning_sequences.each {|sequence|
+      result = winning_sequences.each {|sequence|
         if sequence.all? {|a| @board[a] == player}
           return true
         end
       }
+      # not sure if there is any other easy way
+      if result == true
+        true
+      else
+        false
+      end
     end
 
     def ready_for_min_max?
@@ -77,7 +88,8 @@ class TestWrapperForGame < Neo::Koan
     end
 
     def game_over?
-      return !@board.all? {|x| x.is_a?(Integer)} || game_won?(:X) || game_won?(:O)
+      @board.all? {|x| players.include?(x)} ||
+          game_won?(:X) || game_won?(:O)
     end
 
     def result?
@@ -92,10 +104,10 @@ class TestWrapperForGame < Neo::Koan
       end
     end
 
-    def score(game)
-      if game.game_won?(:X)
+    def score
+      if game_won?(:X)
         return 10
-      elsif game.game_won?(:O)
+      elsif game_won?(:O)
         return -10
       else
         return 0
@@ -109,31 +121,34 @@ class TestWrapperForGame < Neo::Koan
 
     # Call minimax instead of game.set_a_new_board if the next turn is :X
     # You may need to pass the existing game, as it is recursive in nature.
-    def minimax(game)
-      i = 1
+    def mini_max(game)
+      i = 0
       # When you calculate minimax, you need to ensure that the existing player
       # is :X, that is turn == :X
-      scores = []
-      # this minmax algorithm is only for computer player. Computer just needs to win the game.
-      temporary_board = game.board
-      # this game should start with computer player, we simulate the future games starting from anothergame.
-      # This is recursive. Hence we create a new game in every recursive call, making sure that the main game
-      # is not mutated by any chance.
-      another_game = Game.new(game.turn)
-      another_game.set_board(temporary_board)
       # The initial set of possible choices with the current state of the board
-      possible_choices = possible_choices(temporary_board)
-      while i < possible_choices
+      possible_choices = possible_choices(game.board)
+      while i < possible_choices.size
         # Every possible choice leads to a state change.
         # A change in state of the board and player mainly, and obviously the score.
         # We could create new instance of the game everytime we make a possible choice
         # calculate the score and select the choice that gives the maximum score and outside
         # the recursion, you need to set the new game with the new board and the new player
+        # every possible game is a new game.
+        # this game should start with computer player, we simulate the future games starting from anothergame.
+        # This is recursive. Hence we create a new game in every recursive call, making sure that the main game
+        # is not mutated by any chance.
+        another_game = Game.new(game.turn)
+        another_game.set_board(game.board)
         the_choice = possible_choices[i]
         another_game.set_a_new_board(the_choice, another_game.turn)
-        if score(another_game)
-          possible_choices = @board.select {|x| x.is_a?(Integer)}
+        puts("the current value of i is #{i}")
+        another_game.display_board
+        if another_game.game_over?
+          push_score_min_max_score another_game.score
+        else
+          mini_max(another_game)
         end
+        i += 1
       end
     end
   end
@@ -186,5 +201,21 @@ class TestWrapperForGame < Neo::Koan
     assert_equal true, new_game.game_won?(:X)
     new_game.set_board([:O, :X, :X, :X, :O, :X, :X, :X, :O])
     assert_equal true, new_game.game_won?(:O)
+    new_game.set_board ([:O, :X, :X, :X, 5, 6, :X, :O, :O])
+    assert_equal false, new_game.game_over?
+    new_game.set_board ([:O, :X, :X, :X, :O, :X, :X, :O, :X])
+    assert_equal true, new_game.game_over?
+    new_game.set_board ([:O, :X, :X, :X, :O, :X, :X, :O, 9])
+    assert_equal false, new_game.game_over?
+  end
+
+  def test_mini_max_to_work_perfectly
+    game = Game.new(:X)
+    game.set_board([:O, 2, :X, :X, 5, 6, :X, :O, :O])
+    # if the output of mini_max recursive function is equal to the mini_max_scores in game
+    print("the is amazing\n")
+   # print("this is amazing #{game.mini_max(game)}" )
+    # game.mini_max(game)
+    #assert_equal [10, 10, 10], game.mini_max_scores
   end
 end
