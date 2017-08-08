@@ -1,15 +1,7 @@
 =  Koan Ruby
 My solutions to Koan Ruby
 
-= Other stuff
-
-Please note the repo is intended to provide only solutions. The actual test and code is taken from 
-http://www.rubykoans.com
-
-Author         :: Jim Weirich <jim@neo.org>
-Author         :: Joe O'Brien <joe@objo.com>
-Issue Tracker  :: http://www.pivotaltracker.com/projects/48111
-Requires       :: Ruby 1.8.x or later and Rake (any recent version)
+The questions are taken from http://www.rubykoans.com
 
 = License
 
