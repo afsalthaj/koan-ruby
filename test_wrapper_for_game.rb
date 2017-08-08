@@ -22,13 +22,6 @@ class TestWrapperForGame < Neo::Koan
     end
 
     def set_a_new_board(index, new_turn)
-      # A change in a board automatically results in the change in the player for the game.
-      # Please note, that only place where we create future games to predict the future score is in min_max
-      # and we create new Games dynamically to create no troubles
-      # to the existing state of the game. We should ensure the player `new_turn` who is making this
-      # move should be the potential player `turn`. `Game over` check is provided in the place where
-      # set_a_new_board is called. set_a_new_board is called or allowed to called only when the game is not
-      # over or not
       if players.include?(turn) && new_turn == turn
         b = board
         index_choices = possible_choices(b)
@@ -80,13 +73,6 @@ class TestWrapperForGame < Neo::Koan
       end
     end
 
-    def ready_for_min_max?
-      if @player == :X
-        true
-      else
-        false
-      end
-    end
 
     def game_over?
       @board.all? {|x| players.include?(x)} ||
@@ -107,9 +93,9 @@ class TestWrapperForGame < Neo::Koan
 
     def score
       if game_won?(:X)
-        return 10
+        return 1
       elsif game_won?(:O)
-        return -10
+        return -1
       else
         return 0
       end
@@ -127,7 +113,6 @@ class TestWrapperForGame < Neo::Koan
       end
       i = 0
       possible_choices = possible_choices(game.board)
-      puts("the possible choices inside the loops is #{possible_choices}")
       while i < possible_choices.size
         another_game = Game.new(game.turn)
         another_game.set_board(game.board)
@@ -152,43 +137,30 @@ class TestWrapperForGame < Neo::Koan
         another_game.set_a_new_board(the_choice, another_game.turn)
         result = min_max_algo(another_game, another_game)
         puts ("the possible choice is #{the_choice} and the score of that possible choice is #{result}")
-        min_max_scores.merge({the_choice => result})
+        min_max_scores = min_max_scores.merge ({the_choice => result})
+        puts(min_max_scores)
         i += 1
       end
       return min_max_scores
     end
 
-    # Call minimax instead of game.set_a_new_board if the next turn is :X
-    # You may need to pass the existing game, as it is recursive in nature.
-    # the function arguments takes two games to make things safe.
-    # the future game and main_game, where main_game never change
-    def mini_max(game, main_game)
-      i = 0
-      # When you calculate minimax, you need to ensure that the existing player
-      # is :X, that is turn == :X
-      # The initial set of possible choices with the current state of the board
-      possible_choices = possible_choices(game.board)
-      while i < possible_choices.size
-        # Every possible choice leads to a state change.
-        # A change in state of the board and player mainly, and obviously the score.
-        # We could create new instance of the game everytime we make a possible choice
-        # calculate the score and select the choice that gives the maximum score and outside
-        # the recursion, you need to set the new game with the new board and the new player
-        # every possible game is a new game.
-        # this game should start with computer player, we simulate the future games starting from anothergame.
-        # This is recursive. Hence we create a new game in every recursive call, making sure that the main game
-        # is not mutated by any chance.
-        another_game = Game.new(game.turn)
-        another_game.set_board(game.board)
-        the_choice = possible_choices[i]
-        another_game.set_a_new_board(the_choice, another_game.turn)
-        if another_game.game_over?
-          main_game.push_score_min_max_score(another_game.score)
-        else
-          another_game.mini_max(another_game, main_game)
+    def choose_possible_choice(scorehash)
+      scorehash.each do |key, array|
+        if array.all?{|x| x == 1}
+          return key
+        elsif array.all? {|x| x == 1 || x == 0}
+          return key
         end
-        i += 1
       end
+    end
+
+
+    def main_game
+      puts "give me some input"
+      result = gets.chomp
+      puts "give me the next result apart from #{result}"
+      result2 = gets.chomp
+      puts "nice you have finished with the final result #{result2}"
     end
   end
 
@@ -248,16 +220,6 @@ class TestWrapperForGame < Neo::Koan
     assert_equal false, new_game.game_over?
   end
 
-  def test_mini_max_to_work_perfectly
-    game = Game.new(:X)
-    game.set_board([:O, 2, :X, :X, 5, 6, :X, :O, :O])
-    # if the output of mini_max recursive function is equal to the mini_max_scores in game
-    game.mini_max(game, game)
-    #OK! Has the games initial board changed?, No it hasn't
-    assert_equal [:O, 2, :X, :X, 5, 6, :X, :O, :O], game.board
-    assert_equal [-10, 10, 10, 10, -10], game.mini_max_scores
-  end
-
   def test_if_previous_game_would_ever_get_mutated_when_board_is_changed
     game = Game.new(:X)
     game.set_board([:O, :X, :X, :X, 5, 6, :X, :O, :O])
@@ -279,8 +241,20 @@ class TestWrapperForGame < Neo::Koan
   def test_initiate_min_max
     game = Game.new(:X)
     game.set_board([:O, 2, :X, :X, 5, 6, :X, :O, :O])
-    game.set_a_new_board(6, :X)
-    game.display_board
-    print(game.min_max_algo(game, game))
+    assert_equal ({2 => [-1, 1], 5 => [1], 6 => [1, -1]}), (game.initiate_min_max)
+  end
+
+  def test_choose_the_move
+    game = Game.new (:X)
+    game.set_board([:O, 2, :X, :X, 5, 6, :X, :O, :O])
+    result = game.initiate_min_max
+    another_result = ({2 => [1, 1], 5 => [1], 6 => [1, 1]})
+    assert_equal 5,game.choose_possible_choice(result)
+    # if all possible values are positive
+    assert_equal 2  , game.choose_possible_choice(another_result)
+    some_other_result = ({2 => [1, 0], 5 => [1, -1], 6 => [1, 1]})
+    # if there are no positive, what happens?? To be something to think about
+    assert_equal 6, game.choose_possible_choice(some_other_result)
+
   end
 end
